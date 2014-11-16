@@ -14,8 +14,8 @@ function startServer() {
 }
 
 var mongodb = require('mongodb');
-var mongoClient = mongo.MongoClient;
-var collection  = mongo.Collection;
+var mongoClient = mongodb.MongoClient;
+var collection  = mongodb.Collection;
 var redis = require('redis');
 
 var mongoUrl = config.mongoUrl;

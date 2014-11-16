@@ -10,7 +10,7 @@ Compare code performance under real-world conditions using free Heroku servers a
 
 ###Heroku - Verified or unverified account
 If your account is verified with a credit card, this will just work!
-If you aren't willing
+If you're not crazy about that idea, it's a couple extra steps to create accounts on other sites.
 
 ## Why
 Performance-testing tools, like the fantastic jsperf, tell you which code is faster.
