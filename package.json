@@ -1,0 +1,23 @@
+{
+  "name": "generator-loadtestinabox",
+  "version": "0.0.1",
+  "description": "Compare code performance under real-world conditions using free Heroku hosting and add-ons.",
+  "scripts": {
+    "test": "./node_modules/lab/bin/lab -c"
+  },
+  "keywords": [
+    "yeoman-generator"
+  ],
+  "dependencies": {
+    "async": "^0.9.0",
+    "chalk": "^0.5.1",
+    "hapi": "^7.5.2",
+    "joi": "^4.8.1",
+    "lab": "^5.0.2",
+    "mongodb": "^1.4.19",
+    "nodegit": "^0.1.4",
+    "redis": "^0.12.1",
+    "request": "^2.48.0",
+    "yeoman-generator": "^0.17.7"
+  }
+}
