@@ -45,7 +45,7 @@ function run() {
       },
       json: true,
       body: {
-        LOADER_IO_VERIFICATION_TOKEN: config.loaderIo.verificationToken
+        LOADERIO_VERIFICATION_TOKEN: config.loaderIo.verificationToken
       }
     };
     return requestAsync(params);
