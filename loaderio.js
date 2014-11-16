@@ -31,6 +31,7 @@ function run() {
     };
     return requestAsync(params).spread(function (response, body) {
       if (response.statusCode >= 400) throw new Error(body);
+      console.log(body.verification_id);
       config.loaderIo.appId = body.app_id;
       config.loaderIo.verificationToken = body.verification_id;
     });

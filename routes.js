@@ -38,7 +38,7 @@ module.exports = function(server, mongoDb, redisDb) {
       method: 'GET',
       path: '/' + config.loaderIo.verificationToken + '/',
       handler: function (request, reply) {
-        return reply(config.loaderIoToken);
+        return reply(config.loaderIo.verificationToken);
       }
     });
   }

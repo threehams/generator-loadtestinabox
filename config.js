@@ -3,7 +3,7 @@ module.exports = {
   redisUrl: 'redis://rediscloud:9NkPSGkFayvKQrZE@pub-redis-18535.us-east-1-2.5.ec2.garantiadata.com:18535',
   loaderIo: {
     authToken: 'd908ab9948d28322db995e5915a28f9f',
-    verificationToken: process.env.LOADERIO_VERIFICATION_TOKEN || 'loaderio-5a387be0ddb4262be4d6c62fcd51bbf6'
+    verificationToken: process.env.LOADERIO_VERIFICATION_TOKEN || 'loaderio-a00411442993474c32179d27be6d10d7'
   },
   heroku: {
     appName: 'agile-garden-6551',
