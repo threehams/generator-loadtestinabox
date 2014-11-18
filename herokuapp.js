@@ -63,7 +63,7 @@ function run() {
     });
     var newAddons = _.difference(['loaderio', 'mongohq', 'papertrail', 'rediscloud'], addons);
     console.log('Creating addons: ', newAddons);
-    return Promise.settle(_.map(newAddons, function (addon) {
+    return Promise.all(_.map(newAddons, function (addon) {
       return requestAsync({
         method: 'POST',
         url: 'https://api.heroku.com/apps/' + config.heroku.appName + '/addons',
@@ -74,7 +74,7 @@ function run() {
         }
       });
     }));
-  }).then(function (results) {
+  }).then(function () {
     if (!config.loaderIo.authToken) {
       params = {
         method: 'GET',

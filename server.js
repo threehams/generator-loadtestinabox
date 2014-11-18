@@ -5,6 +5,7 @@ var config = require('./config');
 
 function startServer() {
   var server = new Hapi.Server('0.0.0.0', process.env.PORT || 8000);
+  console.log('starting server at 0.0.0.0:8000');
   mongoClient.connect(mongoUrl, function (err, mongo) {
     redisClient.auth(redisURL.auth.split(':')[1], function (err, result) {
       routes(server, mongo, redisClient);
