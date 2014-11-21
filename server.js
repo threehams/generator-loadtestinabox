@@ -26,7 +26,7 @@ var redisClient = redis.createClient(redisURL.port, redisURL.hostname, {no_ready
 var cluster = require('cluster');
 if (!module.parent) {
   if (cluster.isMaster) {
-    for (var i = 0; i < 2; i++) {
+    for (var i = 0; i < process.env.THREADS; i++) {
       cluster.fork();
     }
 
