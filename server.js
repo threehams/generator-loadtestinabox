@@ -1,7 +1,16 @@
+'use strict';
 var Hapi = require('hapi');
 var url = require('url');
 var routes = require('./routes');
 var config = require('./config');
+
+var mongodb = require('mongodb');
+var mongoClient = mongodb.MongoClient;
+var redis = require('redis');
+
+var mongoUrl = config.mongoUrl;
+var redisURL = url.parse(config.redisUrl);
+var redisClient = redis.createClient(redisURL.port, redisURL.hostname, {no_ready_check: true});
 
 function startServer() {
   var server = new Hapi.Server('0.0.0.0', process.env.PORT || 8000);
@@ -14,27 +23,4 @@ function startServer() {
   });
 }
 
-var mongodb = require('mongodb');
-var mongoClient = mongodb.MongoClient;
-var collection  = mongodb.Collection;
-var redis = require('redis');
-
-var mongoUrl = config.mongoUrl;
-var redisURL = url.parse(config.redisUrl);
-var redisClient = redis.createClient(redisURL.port, redisURL.hostname, {no_ready_check: true});
-
-var cluster = require('cluster');
-if (!module.parent) {
-  if (cluster.isMaster) {
-    for (var i = 0; i < process.env.THREADS; i++) {
-      cluster.fork();
-    }
-
-    cluster.on('exit', function(worker) {
-      console.log('worker ' + worker.process.pid + ' died');
-      cluster.fork();
-    });
-  } else {
-    startServer();
-  }
-}
+startServer();
