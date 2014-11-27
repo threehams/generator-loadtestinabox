@@ -95,7 +95,7 @@ function run() {
     return repo.remote_addAsync('heroku_loadtest', 'git@heroku.com:' + config.heroku.appName + '.git');
   }).then(function () {
     console.log('-- Deploying to Heroku...');
-    return repo.remote_pushAsync('heroku_loadtest', 'master');
+    return repo.remote_pushAsync('heroku_loadtest', 'development:master');
   }).then(function () {
     console.log('Deployment complete.');
   });
