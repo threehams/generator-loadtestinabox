@@ -59,7 +59,7 @@ function run() {
       }
     };
     return requestAsync(params).spread(function (response, body) {
-      if (response.statusCode >= 400) throw new Error(body);
+      if (response.statusCode >= 400) throw new Error(JSON.stringify(body));
       console.log(body.verification_id);
       config.loaderIo.appId = body.app_id;
       config.loaderIo.verificationToken = body.verification_id;
@@ -85,7 +85,7 @@ function run() {
       url: 'https://api.loader.io/v2/apps/' + config.loaderIo.appId + '/verify'
     };
     return requestAsync(params).spread(function (response, body) {
-      if (response.statusCode >= 400) throw new Error(body);
+      if (response.statusCode >= 400) throw new Error(JSON.stringify(body));
     });
   }).then(function () {
     return Promise.map(testRoutes, function (route) {
@@ -115,7 +115,6 @@ function run() {
           responseTime: results.responseTime,
           successes: results.successes
         }];
-        console.log('Route', route);
         console.log('Average response time: ', results.responseTime);
         console.log('Successes: ', results.successes);
       });
