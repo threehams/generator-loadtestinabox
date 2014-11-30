@@ -27,7 +27,7 @@ LoaderIo.prototype.run = function() {
     '/test2': []
   };
   var loaderService = new LoaderIoService(config.loaderIo);
-  var herokuService = new HerokuService();
+  var herokuService = new HerokuService(config.heroku);
 
   function addResults(route, results) {
     testResults[route].push({
@@ -39,7 +39,7 @@ LoaderIo.prototype.run = function() {
   return Promise.try(function () {
     return loaderService.createApp();
   }).then(function () {
-    return herokuService.writeConfig();
+    return herokuService.writeConfig({LOADERIO_VERIFICATION_TOKEN: loaderService.verificationToken});
   }).then(function () {
     return loaderService.verifyApp();
   }).then(function () {

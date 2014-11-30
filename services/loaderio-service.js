@@ -3,11 +3,6 @@
 var Promise = require('bluebird');
 Promise.longStackTraces();
 var request = require('request');
-if (process.env.TEST) {
-  Promise.onPossiblyUnhandledRejection(function(error) {
-    throw error;
-  });
-}
 var _ = require('lodash');
 
 var TEST_DURATION = 15;

@@ -4,7 +4,8 @@
   "description": "Compare code performance under real-world conditions using free Heroku hosting and add-ons.",
   "scripts": {
     "test": "mocha",
-    "watch": "mocha --reporter dot --watch"
+    "watch": "mocha --reporter dot --watch",
+    "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha ./test && start coverage/lcov-report/index.html"
   },
   "keywords": [
     "yeoman-generator"

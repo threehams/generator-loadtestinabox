@@ -1,6 +1,6 @@
 'use strict';
 var rewire = require('rewire');
-var LoaderIoService = rewire('../../../services/loaderio-service');
+var LoaderIoService = rewire('../../services/loaderio-service');
 var _ = require('lodash');
 var Promise = require('bluebird');
 
@@ -382,6 +382,14 @@ describe('LoaderIO Service', function() {
 
       it('throws the error', function() {
         return that.loaderService.runTest(that.testId).should.be.rejectedWith(Error, /test not found/);
+      });
+    });
+
+    describe('when testId is missing', function() {
+      it('throws an error', function() {
+        return Promise.resolve().then(function () {
+          that.loaderService.runTest();
+        }).should.be.rejectedWith(Error, /testId is required/);
       });
     });
   });
