@@ -1,0 +1,32 @@
+{
+  "node": true,
+  "esnext": true,
+  "bitwise": true,
+  "browser": true,
+  "camelcase": true,
+  "curly": false,
+  "eqeqeq": true,
+  "expr": true,
+  "immed": true,
+  "indent": 2,
+  "latedef": true,
+  "newcap": true,
+  "noarg": true,
+  "quotmark": "single",
+  "undef": true,
+  "unused": true,
+  "strict": true,
+  "trailing": true,
+  "smarttabs": true,
+  "white": false,
+  "predef": [
+    "after",
+    "afterEach",
+    "before",
+    "beforeEach",
+    "describe",
+    "it",
+    "nock",
+    "sinon"
+  ]
+}

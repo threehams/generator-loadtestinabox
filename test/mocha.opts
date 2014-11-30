@@ -1,0 +1,5 @@
+--recursive
+--reporter progress
+--require test/helpers
+--timeout 100
+--ui bdd

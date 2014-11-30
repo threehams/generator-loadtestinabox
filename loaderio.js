@@ -3,120 +3,58 @@
 var Promise = require('bluebird');
 Promise.longStackTraces();
 
-var request = require('request');
-var config = require('./config');
 var _ = require('lodash');
 var util = require('util');
 var fs = require('fs');
 Promise.promisifyAll(fs);
 var chalk = require('chalk');
+var config = require('./config');
 
-
-var RUN_COUNT = 10;
+var RUN_COUNT = 2;
 var TEST_DURATION = 15;
+var RETRY_DELAY = 5000;
 
-function run() {
-  var params;
-  var headers = { 'loaderio-auth': config.loaderIo.authToken},
-    tests = [],
-    testResults = {};
+var LoaderIoService = require('./services/loaderio-service');
+var HerokuService = require('./services/heroku-service');
+
+function LoaderIo() {}
+
+LoaderIo.prototype.run = function() {
+  var tests = [];
   var testRoutes = ['/test1', '/test2'];
+  var testResults = {
+    '/test1': [],
+    '/test2': []
+  };
+  var loaderService = new LoaderIoService(config.loaderIo);
+  var herokuService = new HerokuService();
 
-  var requestAsync = Promise.promisify(
-    request.defaults({
-      headers: headers,
-      json: true
-    })
-  );
-
-  function pollTestCompletion(testId, resultId) {
-    var url = 'https://api.loader.io/v2/tests/' + testId + '/results/' + resultId;
-
-    return Promise.delay(2000).then(function () {
-      return requestAsync({url: url}).spread(function (response, body) {
-        if (response.statusCode >= 400) throw new Error(JSON.stringify(body));
-        if (body.status === 'ready') return { responseTime: body.avg_response_time, successes: body.success };
-
-        return pollTestCompletion(testId, resultId);
-      });
+  function addResults(route, results) {
+    testResults[route].push({
+      responseTime: results.responseTime,
+      successes: results.successes
     });
   }
 
-  Promise.resolve().then(function () {
-    params = {
-      method: 'GET',
-      url: 'https://api.loader.io/v2/apps'
-    };
-    return requestAsync(params);
-  }).spread(function (response, body) {
-    if (response.statusCode >= 400) throw new Error(JSON.stringify(body));
-    if (body.length) return;
-    params = {
-      method: 'POST',
-      url: 'https://api.loader.io/v2/apps',
-      body: {
-        app: 'http://' + config.heroku.appName + '.herokuapp.com'
-      }
-    };
-    return requestAsync(params).spread(function (response, body) {
-      if (response.statusCode >= 400) throw new Error(JSON.stringify(body));
-      console.log(body.verification_id);
-      config.loaderIo.appId = body.app_id;
-      config.loaderIo.verificationToken = body.verification_id;
-    });
+  return Promise.try(function () {
+    return loaderService.createApp();
   }).then(function () {
-    params = {
-      method: 'PATCH',
-      url: 'https://api.heroku.com/apps/' + config.heroku.appName + '/config-vars',
-      headers: {
-        'Authorization': 'Bearer ' + config.heroku.authToken,
-        'Content-Type': 'application/json',
-        'Accept': 'application/vnd.heroku+json; version=3'
-      },
-      body: {
-        LOADERIO_VERIFICATION_TOKEN: config.loaderIo.verificationToken
-      }
-    };
-    return requestAsync(params);
+    return herokuService.writeConfig();
   }).then(function () {
-    console.log(config.loaderIo.appId);
-    params = {
-      method: 'POST',
-      url: 'https://api.loader.io/v2/apps/' + config.loaderIo.appId + '/verify'
-    };
-    return requestAsync(params).spread(function (response, body) {
-      if (response.statusCode >= 400) throw new Error(JSON.stringify(body));
-    });
+    return loaderService.verifyApp();
   }).then(function () {
     return Promise.map(testRoutes, function (route) {
-      return requestAsync({
-        method: 'POST',
-        url: 'https://api.loader.io/v2/tests',
-        body: {
-          test_type: 'cycling',
-          urls: [{
-            request_type: 'GET',
-            url: 'http://' + config.heroku.appName + '.herokuapp.com' + route
-          }],
-          duration: TEST_DURATION,
-          initial: 0,
-          total: 1000
-        }
-      }).spread(function (response, body) {
-        if (response.statusCode >= 400) throw new Error(JSON.stringify(body));
-        tests.push({route: route, testId: body.test_id});
+      return loaderService.createTest({ route: route }).then(function(result) {
+        var testId = result.testId;
+        var resultId = result.resultId;
+        tests.push({route: route, testId: testId});
 
         // TODO Check for errors after 5 seconds, then wait for remainder of testing time
         return Promise.delay(TEST_DURATION * 1000).then(function () {
-          return pollTestCompletion(body.test_id, body.result_id);
+          return loaderService.pollCompletion(testId, resultId);
         });
       }).then(function (results) {
-        testResults[route] = [{
-          responseTime: results.responseTime,
-          successes: results.successes
-        }];
-        console.log('Average response time: ', results.responseTime);
-        console.log('Successes: ', results.successes);
+        addResults(route, results);
       });
     }, {concurrency: 1});
   }).then(function () {
@@ -131,48 +69,39 @@ function run() {
     return Promise.map(dupeArray(tests, RUN_COUNT - 1), function (test) {
       var retries = 0;
 
-      function runTest() {
-        return requestAsync({
-          method: 'PUT',
-          url: 'https://api.loader.io/v2/tests/' + test.testId + '/run'
-        }).spread(function (response, body) {
-          if (response.statusCode >= 400) {
-            if (retries < 2) {
-              retries++;
-              return Promise.delay(5000).then(runTest);
-            } else {
-              throw new Error(JSON.stringify(body));
-            }
+      function runTest(testId) {
+        return loaderService.runTest(testId).delay(TEST_DURATION * 1000).then(function (resultId) {
+          return loaderService.pollCompletion(testId, resultId);
+        }).then(function (results) {
+          addResults(test.route, results);
+        }).catch(function (error) {
+          if (retries < 2) {
+            retries++;
+            return Promise.delay(RETRY_DELAY).then(function () {
+              return runTest(testId);
+            });
+          } else {
+            throw error;
           }
-
-          return Promise.delay(TEST_DURATION * 1000).then(function () {
-            return pollTestCompletion(body.test_id, body.result_id);
-          });
         });
       }
 
-      return runTest().then(function (results) {
-        console.log('Average response time: ', results.responseTime);
-        console.log('Successes: ', results.successes);
-        testResults[test.route].push({
-          responseTime: results.responseTime,
-          successes: results.successes
-        });
-      });
+      return runTest(test.testId);
+
     }, {concurrency: 1});
   }).then(function () {
     return fs.writeFileAsync('./results.json', JSON.stringify(testResults, null, 2));
   }).then(function () {
-    displayResults(testResults);
+    return interpretResults(testResults);
   }).catch(function (error) {
     console.log(util.inspect(error, {depth: 4}));
     console.log(util.inspect(error.message, {depth: 4}));
     console.log(error.stack);
     throw error;
   });
-}
+};
 
-function displayResults(testResults) {
+function interpretResults(testResults) {
   _.forEach(testResults, function(routeResults) {
     routeResults.sort(function (result) {
       return result.successes;
@@ -202,19 +131,6 @@ function displayResults(testResults) {
     return Math.sqrt(square);
   }
 
-  function winner(results, param, direction) {
-    var func = (direction === 'asc') ? _.min : _.max;
-    return func(results, function (result) {
-      return result[param];
-    });
-  }
-
-  function compare(result, winner, direction) {
-    if (winner === result) return chalk.green('fastest');
-    if (direction === 'desc') return chalk.red((winner / result * 100 - 100).toFixed(1) + '% slower');
-    return chalk.red((result / winner * 100 - 100).toFixed(1) + '% slower');
-  }
-
   var finalResults = {};
   _.forEach(testResults, function (results, route) {
     var averageTime = average(results, 'responseTime');
@@ -233,6 +149,26 @@ function displayResults(testResults) {
     };
   });
 
+  return finalResults;
+}
+
+module.exports = LoaderIo;
+
+function displayResults(finalResults) {
+  function winner(results, param, direction) {
+    var func = (direction === 'asc') ? _.min : _.max;
+    return func(results, function (result) {
+      return result[param];
+    });
+  }
+
+  function compare(result, winner, direction) {
+    if (winner === result) return chalk.green('fastest');
+    if (direction === 'desc') return chalk.red((winner / result * 100 - 100).toFixed(1) + '% slower');
+    return chalk.red((result / winner * 100 - 100).toFixed(1) + '% slower');
+  }
+
+
   var timeWinner = winner(finalResults, 'averageTime', 'asc');
   var successesWinner = winner(finalResults, 'averageSuccesses', 'desc');
 
@@ -248,11 +184,9 @@ function displayResults(testResults) {
   });
 }
 
-module.exports = run;
-
 if (!module.parent) {
   //fs.readFileAsync('./results.json').then(JSON.parse).then(function (results) {
   //  displayResults(results);
   //});
-  run();
+  new LoaderIo().run().then(displayResults);
 }

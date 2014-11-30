@@ -4,7 +4,8 @@ module.exports = {
   loaderIo: {
     appId: 'a00411442993474c32179d27be6d10d7',
     authToken: 'd908ab9948d28322db995e5915a28f9f',
-    verificationToken: process.env.LOADERIO_VERIFICATION_TOKEN || 'loaderio-a00411442993474c32179d27be6d10d7'
+    verificationToken: process.env.LOADERIO_VERIFICATION_TOKEN || 'loaderio-a00411442993474c32179d27be6d10d7',
+    hostname: 'https://agile-garden-6551.herokuapp.com'
   },
   heroku: {
     appName: 'agile-garden-6551',
