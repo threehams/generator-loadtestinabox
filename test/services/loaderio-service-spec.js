@@ -31,6 +31,34 @@ describe('LoaderIO Service', function() {
     });
 
     describe('app ID does not exist', function() {
+      describe('no app exists', function() {
+        beforeEach(function() {
+          that.config.appId = null;
+          that.loaderService = new LoaderIoService(that.config);
+          nock(LoaderIoService.prototype.HOST)
+            .matchHeader('loaderio-auth', 'test-auth-token')
+            .get('/v2/apps')
+            .reply(200, []);
+          nock(LoaderIoService.prototype.HOST)
+            .matchHeader('loaderio-auth', 'test-auth-token')
+            .post('/v2/apps', {app: that.config.hostname})
+            .reply(200, {
+              app_id: '98e9b2f90286de18db4a97413861425a',
+              message: 'success',
+              verification_id: 'loaderio-98e9b2f9ccc6de07ca5997413861425a'
+            });
+        });
+
+        it('returns ID and verification token for the new app', function() {
+          return Promise.resolve().then(function () {
+            return that.loaderService.createApp();
+          }).then(function() {
+            that.loaderService.appId.should.equal('98e9b2f90286de18db4a97413861425a');
+            that.loaderService.verificationToken.should.equal('loaderio-98e9b2f9ccc6de07ca5997413861425a');
+          });
+        });
+      });
+
       describe('app exists and matches hostname', function() {
         describe('and verification token exists', function() {
           beforeEach(function() {
@@ -73,22 +101,47 @@ describe('LoaderIO Service', function() {
                   status: 'verified'
                 }
               ]);
-            nock(LoaderIoService.prototype.HOST)
-              .matchHeader('loaderio-auth', 'test-auth-token')
-              .post('/v2/apps', {app: that.config.hostname})
-              .reply(200, {
-                app_id: '98e9b2f9ccc6de07ca5997413861425a',
-                message: 'success',
-                verification_id: 'loaderio-98e9b2f9ccc6de07ca5997413861425a'
-              });
           });
 
-          it('creates the app', function() {
-            return Promise.resolve().then(function () {
-              return that.loaderService.createApp();
-            }).then(function() {
-              that.loaderService.appId.should.equal('98e9b2f9ccc6de07ca5997413861425a');
-              that.loaderService.verificationToken.should.equal('loaderio-98e9b2f9ccc6de07ca5997413861425a');
+          describe('on app creation success', function() {
+            beforeEach(function() {
+              nock(LoaderIoService.prototype.HOST)
+                .matchHeader('loaderio-auth', 'test-auth-token')
+                .post('/v2/apps', {app: that.config.hostname})
+                .reply(200, {
+                  app_id: '98e9b2f9ccc6de07ca5997413861425a',
+                  message: 'success',
+                  verification_id: 'loaderio-98e9b2f9ccc6de07ca5997413861425a'
+                });
+            });
+
+            it('creates the app', function() {
+              return Promise.resolve().then(function () {
+                return that.loaderService.createApp();
+              }).then(function() {
+                that.loaderService.appId.should.equal('98e9b2f9ccc6de07ca5997413861425a');
+                that.loaderService.verificationToken.should.equal('loaderio-98e9b2f9ccc6de07ca5997413861425a');
+              });
+            });
+          });
+
+          describe('on app creation error', function() {
+            beforeEach(function() {
+              nock(LoaderIoService.prototype.HOST)
+                .matchHeader('loaderio-auth', 'test-auth-token')
+                .post('/v2/apps', {app: that.config.hostname})
+                .reply(400, {
+                  errors: [
+                    'App creation failed'
+                  ],
+                  message: 'error'
+                });
+            });
+
+            it('throws the error', function() {
+              return Promise.resolve().then(function () {
+                return that.loaderService.createApp();
+              }).should.be.rejectedWith(Error, /App creation failed/);
             });
           });
         });
@@ -150,6 +203,28 @@ describe('LoaderIO Service', function() {
           return Promise.resolve().then(function () {
             return that.loaderService.createApp();
           }).should.be.rejectedWith(Error, /different host/);
+        });
+      });
+
+      describe('error when getting apps', function() {
+        beforeEach(function() {
+          that.config.appId = null;
+          that.loaderService = new LoaderIoService(that.config);
+          nock(LoaderIoService.prototype.HOST)
+            .matchHeader('loaderio-auth', 'test-auth-token')
+            .get('/v2/apps')
+            .reply(400, {
+              errors: [
+                'Could not get apps'
+              ],
+              message: 'error'
+            });
+        });
+
+        it('throws the error', function() {
+          return Promise.resolve().then(function () {
+            return that.loaderService.createApp();
+          }).should.be.rejectedWith(Error, /Could not get apps/);
         });
       });
     });

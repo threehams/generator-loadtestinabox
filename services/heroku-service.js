@@ -7,6 +7,8 @@ var request = require('request');
 function HerokuService(config) {
   this.appName = config.appName;
   this.authToken = config.authToken;
+  this.username = config.username;
+  this.password = config.password;
   this._setHeaders();
 }
 
@@ -19,9 +21,7 @@ HerokuService.prototype.createAddon = function(addon) {
     body: {
       plan: addon
     }
-  }).spread(function(response, body) {
-    if (response.statusCode >= 400) throw new Error(JSON.stringify(body));
-  });
+  }).bind(this).then(this._checkStatus);
 };
 
 HerokuService.prototype.createApp = function() {
@@ -29,8 +29,7 @@ HerokuService.prototype.createApp = function() {
     method: 'POST',
     url: this.HOST + '/apps'
   };
-  return this.requestAsync(params).spread(function (response, body) {
-    if (response.statusCode >= 400) throw new Error(JSON.stringify(body));
+  return this.requestAsync(params).bind(this).then(this._checkStatus).spread(function (response, body) {
     return body.name;
   });
 };
@@ -40,8 +39,7 @@ HerokuService.prototype.getAddons = function() {
     method: 'GET',
     url: 'https://api.heroku.com/apps/' + this.appName + '/addons'
   };
-  return this.requestAsync(params).spread(function(response, body) {
-    if (response.statusCode >= 400) throw new Error(JSON.stringify(body));
+  return this.requestAsync(params).bind(this).then(this._checkStatus).spread(function(response, body) {
     return body;
   });
 };
@@ -58,10 +56,7 @@ HerokuService.prototype.getAuthToken = function(email, password) {
     headers: headers,
     json: true
   };
-  return this.requestAsync(params).spread(function (response, body) {
-    if (response.statusCode >= 400) throw new Error(JSON.stringify(body));
-    console.log(body);
-
+  return this.requestAsync(params).bind(this).then(this._checkStatus).spread(function (response, body) {
     return body.access_token.token;
   });
 };
@@ -71,8 +66,7 @@ HerokuService.prototype.getConfig = function() {
     method: 'GET',
     url: this.HOST + '/apps/' + this.appName + '/config-vars'
   };
-  return this.requestAsync(params).spread(function (response, body) {
-    if (response.statusCode >= 400) throw new Error(JSON.stringify(body));
+  return this.requestAsync(params).bind(this).then(this._checkStatus).spread(function (response, body) {
     return body;
   });
 };
@@ -82,15 +76,18 @@ HerokuService.prototype.setAuthToken = function(authToken) {
   this._setHeaders();
 };
 
-HerokuService.prototype.writeConfig = function(opts) {
+HerokuService.prototype.setConfig = function(opts) {
   var params = {
     method: 'PATCH',
     url: this.HOST + '/apps/' + this.appName + '/config-vars',
     body: opts
   };
-  return this.requestAsync(params).spread(function(response, body) {
-    if (response.statusCode >= 400) throw new Error(JSON.stringify(body));
-  });
+  return this.requestAsync(params).bind(this).then(this._checkStatus);
+};
+
+HerokuService.prototype._checkStatus = function(responseBody) {
+  if (responseBody[0].statusCode >= 400) throw new Error(JSON.stringify(responseBody[1]));
+  return responseBody;
 };
 
 HerokuService.prototype._setHeaders = function() {

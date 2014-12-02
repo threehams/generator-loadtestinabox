@@ -38,8 +38,7 @@ LoaderIoService.prototype.createApp = function() {
     method: 'GET',
     url: this.HOST + '/v2/apps'
   };
-  return this.requestAsync(params).spread(function (response, body) {
-    if (response.statusCode >= 400) throw new Error(JSON.stringify(body));
+  return this.requestAsync(params).then(that._checkStatus).spread(function (response, body) {
     if (body.length) {
       if (_.contains(that.hostname, body[0].app)) {
         that.appId = body[0].app_id;
@@ -56,8 +55,7 @@ LoaderIoService.prototype.createApp = function() {
         app: that.hostname
       }
     };
-    return that.requestAsync(params).spread(function (response, body) {
-      if (response.statusCode >= 400) throw new Error(JSON.stringify(body));
+    return that.requestAsync(params).then(that._checkStatus).spread(function (response, body) {
       // TODO actually need to write this to local environment somehow.
       that.appId = body.app_id;
       that.verificationToken = body.verification_id;
@@ -81,8 +79,7 @@ LoaderIoService.prototype.createTest = function(opts) {
       initial: 0,
       total: 1000
     }
-  }).spread(function (response, body) {
-    if (response.statusCode >= 400) throw new Error(JSON.stringify(body));
+  }).bind(this).then(this._checkStatus).spread(function (response, body) {
     return {
       testId: body.test_id,
       resultId: body.result_id
@@ -95,12 +92,11 @@ LoaderIoService.prototype.pollCompletion = function(testId, resultId) {
   var url = this.HOST + '/v2/tests/' + testId + '/results/' + resultId;
 
   return Promise.delay(POLL_INTERVAL).then(function () {
-    return that.requestAsync({url: url}).spread(function (response, body) {
-      if (response.statusCode >= 400) throw new Error(JSON.stringify(body));
-      if (body.status === 'ready') return { responseTime: body.avg_response_time, successes: body.success };
+    return that.requestAsync({url: url});
+  }).bind(this).then(this._checkStatus).spread(function (response, body) {
+    if (body.status === 'ready') return { responseTime: body.avg_response_time, successes: body.success };
 
-      return that.pollCompletion(testId, resultId);
-    });
+    return that.pollCompletion(testId, resultId);
   });
 };
 
@@ -110,8 +106,7 @@ LoaderIoService.prototype.runTest = function(testId) {
   return this.requestAsync({
     method: 'PUT',
     url: this.HOST + '/v2/tests/' + testId + '/run'
-  }).spread(function (response, body) {
-    if (response.statusCode >= 400) throw new Error(JSON.stringify(body));
+  }).bind(this).then(this._checkStatus).spread(function (response, body) {
     return body.result_id;
   });
 };
@@ -121,9 +116,12 @@ LoaderIoService.prototype.verifyApp = function() {
     method: 'POST',
     url: this.HOST + '/v2/apps/' + this.appId + '/verify'
   };
-  return this.requestAsync(params).spread(function (response, body) {
-    if (response.statusCode >= 400) throw new Error(JSON.stringify(body));
-  });
+  return this.requestAsync(params).bind(this).then(this._checkStatus);
+};
+
+LoaderIoService.prototype._checkStatus = function(responseBody) {
+  if (responseBody[0].statusCode >= 400) throw new Error(JSON.stringify(responseBody[1]));
+  return responseBody;
 };
 
 LoaderIoService.prototype._requireConfig = function(attrs) {

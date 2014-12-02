@@ -1,7 +1,13 @@
 'use strict';
 var Promise = require('bluebird');
 
-function FakeHerokuService() {}
+function FakeHerokuService(config) {
+  config = config || {};
+  this.appName = config.appName;
+  this.authToken = config.authToken;
+  this.username = config.username;
+  this.password = config.password;
+}
 
 FakeHerokuService.prototype.createAddon = function() {
   return Promise.resolve();
@@ -19,7 +25,7 @@ FakeHerokuService.prototype.getAddons = function() {
     }
   ]);
 };
-FakeHerokuService.prototype.getAuthToken = function() {
+FakeHerokuService.prototype.getAuthToken = function(username, password) {
   return 'ff9c3a98-3408-46ac-85cf-cbc41306f736';
 };
 FakeHerokuService.prototype.getConfig = function() {
@@ -28,6 +34,6 @@ FakeHerokuService.prototype.getConfig = function() {
   });
 };
 FakeHerokuService.prototype.setAuthToken = function() {};
-FakeHerokuService.prototype.writeConfig = function() {};
+FakeHerokuService.prototype.setConfig = function() {};
 
 module.exports = FakeHerokuService;

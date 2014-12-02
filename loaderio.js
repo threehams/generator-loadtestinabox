@@ -17,10 +17,15 @@ var RETRY_DELAY = 5000;
 var LoaderIoService = require('./services/loaderio-service');
 var HerokuService = require('./services/heroku-service');
 
-function LoaderIo() {}
+function LoaderIo(opts) {
+  opts = opts || {};
+  this.runCount = opts.runCount || RUN_COUNT;
+  this.testDuration = opts.testDuration || TEST_DURATION;
+}
 
 LoaderIo.prototype.run = function() {
   var tests = [];
+  var that = this;
   var testRoutes = ['/test1', '/test2'];
   var testResults = {
     '/test1': [],
@@ -39,7 +44,7 @@ LoaderIo.prototype.run = function() {
   return Promise.try(function () {
     return loaderService.createApp();
   }).then(function () {
-    return herokuService.writeConfig({LOADERIO_VERIFICATION_TOKEN: loaderService.verificationToken});
+    return herokuService.setConfig({LOADERIO_VERIFICATION_TOKEN: loaderService.verificationToken});
   }).then(function () {
     return loaderService.verifyApp();
   }).then(function () {
@@ -59,13 +64,12 @@ LoaderIo.prototype.run = function() {
     }, {concurrency: 1});
   }).then(function () {
     function dupeArray(array, times) {
-      if (times === 0) return [];
-
       return _.reduce(_.range(0, times), function (result) {
         return result.concat(array);
       }, []);
     }
 
+    if (that.runCount < 2) return;
     return Promise.map(dupeArray(tests, RUN_COUNT - 1), function (test) {
       var retries = 0;
 
@@ -184,6 +188,7 @@ function displayResults(finalResults) {
   });
 }
 
+/* istanbul ignore if */
 if (!module.parent) {
   //fs.readFileAsync('./results.json').then(JSON.parse).then(function (results) {
   //  displayResults(results);

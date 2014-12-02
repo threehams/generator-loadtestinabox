@@ -1,7 +1,13 @@
 'use strict';
 var Promise = require('bluebird');
 
-function FakeLoaderService() {}
+function FakeLoaderService(config) {
+  config = config || {};
+  this.verificationToken = config.verificationToken;
+  this.appId = config.appId;
+  this.hostname = config.hostname;
+  this.authToken = config.authToken;
+}
 
 FakeLoaderService.prototype = {
   createApp: function() {},
