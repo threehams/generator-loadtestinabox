@@ -31,8 +31,8 @@ LoaderIo.prototype.run = function() {
     '/test1': [],
     '/test2': []
   };
-  var loaderService = new LoaderIoService(config.loaderIo);
-  var herokuService = new HerokuService(config.heroku);
+  this.loaderService = new LoaderIoService(config.loaderIo);
+  this.herokuService = new HerokuService(config.heroku);
 
   function addResults(route, results) {
     testResults[route].push({
@@ -41,22 +41,21 @@ LoaderIo.prototype.run = function() {
     });
   }
 
-  return Promise.try(function () {
-    return loaderService.createApp();
-  }).then(function () {
-    return herokuService.setConfig({LOADERIO_VERIFICATION_TOKEN: loaderService.verificationToken});
-  }).then(function () {
-    return loaderService.verifyApp();
-  }).then(function () {
+  return Promise.resolve()
+    .then(that.loaderService.createApp)
+    .then(function () {
+    return that.herokuService.setConfig({LOADERIO_VERIFICATION_TOKEN: that.loaderService.verificationToken});
+  }).then(that.loaderService.verifyApp)
+    .then(function () {
     return Promise.map(testRoutes, function (route) {
-      return loaderService.createTest({ route: route }).then(function(result) {
+      return that.loaderService.createTest({ route: route }).then(function(result) {
         var testId = result.testId;
         var resultId = result.resultId;
         tests.push({route: route, testId: testId});
 
         // TODO Check for errors after 5 seconds, then wait for remainder of testing time
         return Promise.delay(TEST_DURATION * 1000).then(function () {
-          return loaderService.pollCompletion(testId, resultId);
+          return that.loaderService.pollCompletion(testId, resultId);
         });
       }).then(function (results) {
         addResults(route, results);
@@ -74,8 +73,8 @@ LoaderIo.prototype.run = function() {
       var retries = 0;
 
       function runTest(testId) {
-        return loaderService.runTest(testId).delay(TEST_DURATION * 1000).then(function (resultId) {
-          return loaderService.pollCompletion(testId, resultId);
+        return that.loaderService.runTest(testId).delay(TEST_DURATION * 1000).then(function (resultId) {
+          return that.loaderService.pollCompletion(testId, resultId);
         }).then(function (results) {
           addResults(test.route, results);
         }).catch(function (error) {

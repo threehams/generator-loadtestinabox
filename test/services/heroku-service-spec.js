@@ -16,7 +16,7 @@ describe('Heroku Service', function() {
     describe('on success', function() {
       beforeEach(function() {
         that.herokuService = new HerokuService(that.config);
-        nock(HerokuService.prototype.HOST)
+        nock(that.herokuService.HOST)
           .matchHeader('Authorization', 'Bearer ' + that.config.authToken)
           .post('/apps/' + that.config.appName + '/addons', {plan: 'pork'})
           .reply(200, that.configVars);
@@ -30,7 +30,7 @@ describe('Heroku Service', function() {
     describe('on error', function() {
       beforeEach(function() {
         that.herokuService = new HerokuService(that.config);
-        nock(HerokuService.prototype.HOST)
+        nock(that.herokuService.HOST)
           .matchHeader('Authorization', 'Bearer ' + that.config.authToken)
           .post('/apps/' + that.config.appName + '/addons', {plan: 'pork'})
           .reply(403, {message: 'Not allowed'});
@@ -49,7 +49,7 @@ describe('Heroku Service', function() {
 
     describe('on success', function() {
       beforeEach(function() {
-        nock(HerokuService.prototype.HOST)
+        nock(that.herokuService.HOST)
           .matchHeader('Authorization', 'Bearer ' + that.config.authToken)
           .post('/apps')
           .reply(200, {
@@ -91,7 +91,7 @@ describe('Heroku Service', function() {
 
     describe('on error', function() {
       beforeEach(function() {
-        nock(HerokuService.prototype.HOST)
+        nock(that.herokuService.HOST)
           .matchHeader('Authorization', 'Bearer ' + that.config.authToken)
           .post('/apps')
           .reply(500, {message: 'App creation failed'});
@@ -121,7 +121,7 @@ describe('Heroku Service', function() {
             ]
           }
         ];
-        nock(HerokuService.prototype.HOST)
+        nock(that.herokuService.HOST)
           .matchHeader('Authorization', 'Bearer ' + that.config.authToken)
           .get('/apps/' + that.config.appName + '/addons')
           .reply(200, that.addonList);
@@ -134,7 +134,7 @@ describe('Heroku Service', function() {
 
     describe('on error', function() {
       beforeEach(function() {
-        nock(HerokuService.prototype.HOST)
+        nock(that.herokuService.HOST)
           .matchHeader('Authorization', 'Bearer ' + that.config.authToken)
           .get('/apps/' + that.config.appName + '/addons')
           .reply(500, {message: 'Error when getting addons'});
@@ -152,7 +152,7 @@ describe('Heroku Service', function() {
     });
     describe('on success', function() {
       beforeEach(function() {
-        nock(HerokuService.prototype.HOST)
+        nock(that.herokuService.HOST)
           .matchHeader('Authorization', 'dXNlcm5hbWU6cGFzc3dvcmQ=')
           .post('/oauth/authorizations')
           .reply(200, {
@@ -174,7 +174,7 @@ describe('Heroku Service', function() {
 
     describe('on error', function() {
       beforeEach(function() {
-        nock(HerokuService.prototype.HOST)
+        nock(that.herokuService.HOST)
           .matchHeader('Authorization', 'dXNlcm5hbWU6cGFzc3dvcmQ=')
           .post('/oauth/authorizations')
           .reply(401, {message: 'Invalid credentials'});
@@ -192,7 +192,7 @@ describe('Heroku Service', function() {
     });
     describe('on success', function() {
       beforeEach(function() {
-        nock(HerokuService.prototype.HOST)
+        nock(that.herokuService.HOST)
           .matchHeader('Authorization', 'Bearer ' + that.config.authToken)
           .get('/apps/' + that.config.appName + '/config-vars')
           .reply(200, {
@@ -209,7 +209,7 @@ describe('Heroku Service', function() {
 
     describe('on error', function() {
       beforeEach(function() {
-        nock(HerokuService.prototype.HOST)
+        nock(that.herokuService.HOST)
           .matchHeader('Authorization', 'Bearer ' + that.config.authToken)
           .get('/apps/' + that.config.appName + '/config-vars')
           .reply(400, {message: 'Failed to get config'});
@@ -252,7 +252,7 @@ describe('Heroku Service', function() {
           theKey: 'theValue'
         };
         that.herokuService = new HerokuService(that.config);
-        nock(HerokuService.prototype.HOST)
+        nock(that.herokuService.HOST)
           .matchHeader('Authorization', 'Bearer ' + that.config.authToken)
           .patch('/apps/' + that.config.appName + '/config-vars')
           .reply(200, that.configVars);
@@ -269,7 +269,7 @@ describe('Heroku Service', function() {
           theKey: 'theValue'
         };
         that.herokuService = new HerokuService(that.config);
-        nock(HerokuService.prototype.HOST)
+        nock(that.herokuService.HOST)
           .matchHeader('Authorization', 'Bearer ' + that.config.authToken)
           .patch('/apps/' + that.config.appName + '/config-vars')
           .reply(404, {message: 'Bad key'});

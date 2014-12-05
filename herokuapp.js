@@ -15,63 +15,59 @@ var LoaderIoService = require('./services/loaderio-service');
 function HerokuApp(config) {
   this.herokuService = new HerokuService(config.heroku);
   this.loaderService = new LoaderIoService(config.loaderIo);
+
+  this.createApp = function() {
+    var that = this;
+    return Promise.resolve().then(function () {
+      if (that.herokuService.authToken) return that.herokuService.authToken;
+      //that.herokuService.getAuthToken(that.herokuService.username, that.herokuService.password).then(console.log);
+      return that.herokuService.getAuthToken(that.herokuService.username, that.herokuService.password);
+    }).then(function (authToken) {
+      that.herokuService.setAuthToken(authToken);
+    }).then(function () {
+      if (that.herokuService.appName) return that.herokuService.appName;
+      return that.herokuService.createApp();
+    }).then(function (appName) {
+      that.herokuService.appName = appName;
+    });
+  };
+
+  this.run = function() {
+    var that = this;
+
+    return git.initAsync('./').then(function (result) {
+      that.repo = result;
+      Promise.promisifyAll(that.repo);
+    }).then(function () {
+      that.createApp();
+    }).then(that.herokuService.getAddons).then(function (addons) {
+      var addonNames = _.map(addons, 'name');
+      var newAddons = _.difference(['loaderio', 'mongohq', 'papertrail', 'rediscloud'], addonNames);
+      return Promise.all(_.map(newAddons, function (addon) {
+        return that.herokuService.createAddon(addon);
+      }));
+    }).then(function () {
+      if (!that.loaderService.authToken) {
+        return that.herokuService.getConfig('LOADERIO_API_KEY').then(function (configVars) {
+          that.loaderService.authToken = configVars.LOADERIO_API_KEY;
+        });
+      }
+    }).then(function () {
+      that.repo.remote_listAsync();
+    }).then(function (repos) {
+      if (_.contains(repos, 'heroku_loadtest')) {
+        return that.repo.remote_removeAsync('heroku_loadtest');
+      }
+    }).then(function () {
+      return that.repo.remote_addAsync('heroku_loadtest', 'git@heroku.com:' + that.herokuService.appName + '.git');
+    }).then(function () {
+      //console.log('-- Deploying to Heroku...');
+      return that.repo.remote_pushAsync('heroku_loadtest', 'development:master');
+    }).then(function () {
+      //console.log('Deployment complete.');
+    });
+  };
 }
-
-HerokuApp.prototype.createApp = function() {
-  var that = this;
-  return Promise.resolve().then(function () {
-    if (that.herokuService.authToken) return that.herokuService.authToken;
-    //that.herokuService.getAuthToken(that.herokuService.username, that.herokuService.password).then(console.log);
-    return that.herokuService.getAuthToken(that.herokuService.username, that.herokuService.password);
-  }).then(function (authToken) {
-    that.herokuService.setAuthToken(authToken);
-  }).then(function () {
-    if (that.herokuService.appName) return that.herokuService.appName;
-    return that.herokuService.createApp();
-  }).then(function (appName) {
-    that.herokuService.appName = appName;
-  });
-};
-
-HerokuApp.prototype.run = function() {
-  var repo;
-  var that = this;
-
-  return git.initAsync('./').then(function (result) {
-    repo = result;
-    Promise.promisifyAll(repo);
-  }).then(function () {
-    return that.createApp();
-  }).then(function () {
-    return that.herokuService.getAddons();
-  }).then(function (addons) {
-    var addonNames = _.map(addons, 'name');
-    var newAddons = _.difference(['loaderio', 'mongohq', 'papertrail', 'rediscloud'], addonNames);
-    //console.log('Creating addons: ', newAddons);
-    return Promise.all(_.map(newAddons, function (addon) {
-      return that.herokuService.createAddon(addon);
-    }));
-  }).then(function () {
-    if (!that.loaderService.authToken) {
-      return that.herokuService.getConfig('LOADERIO_API_KEY').then(function (configVars) {
-        that.loaderService.authToken = configVars.LOADERIO_API_KEY;
-      });
-    }
-  }).then(function () {
-    return repo.remote_listAsync();
-  }).then(function (repos) {
-    if (_.contains(repos, 'heroku_loadtest')) {
-      return repo.remote_removeAsync('heroku_loadtest');
-    }
-  }).then(function () {
-    return repo.remote_addAsync('heroku_loadtest', 'git@heroku.com:' + that.herokuService.appName + '.git');
-  }).then(function () {
-    //console.log('-- Deploying to Heroku...');
-    return repo.remote_pushAsync('heroku_loadtest', 'development:master');
-  }).then(function () {
-    //console.log('Deployment complete.');
-  });
-};
 
 module.exports = HerokuApp;
 

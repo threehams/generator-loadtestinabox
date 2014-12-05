@@ -35,11 +35,11 @@ describe('LoaderIO Service', function() {
         beforeEach(function() {
           that.config.appId = null;
           that.loaderService = new LoaderIoService(that.config);
-          nock(LoaderIoService.prototype.HOST)
+          nock(that.loaderService.HOST)
             .matchHeader('loaderio-auth', 'test-auth-token')
             .get('/v2/apps')
             .reply(200, []);
-          nock(LoaderIoService.prototype.HOST)
+          nock(that.loaderService.HOST)
             .matchHeader('loaderio-auth', 'test-auth-token')
             .post('/v2/apps', {app: that.config.hostname})
             .reply(200, {
@@ -64,7 +64,7 @@ describe('LoaderIO Service', function() {
           beforeEach(function() {
             that.config.appId = null;
             that.loaderService = new LoaderIoService(that.config);
-            nock(LoaderIoService.prototype.HOST)
+            nock(that.loaderService.HOST)
               .matchHeader('loaderio-auth', 'test-auth-token')
               .get('/v2/apps')
               .reply(200, [
@@ -91,7 +91,7 @@ describe('LoaderIO Service', function() {
             that.config.verificationToken = null;
             that.loaderService = new LoaderIoService(that.config);
 
-            nock(LoaderIoService.prototype.HOST)
+            nock(that.loaderService.HOST)
               .matchHeader('loaderio-auth', 'test-auth-token')
               .get('/v2/apps')
               .reply(200, [
@@ -105,7 +105,7 @@ describe('LoaderIO Service', function() {
 
           describe('on app creation success', function() {
             beforeEach(function() {
-              nock(LoaderIoService.prototype.HOST)
+              nock(that.loaderService.HOST)
                 .matchHeader('loaderio-auth', 'test-auth-token')
                 .post('/v2/apps', {app: that.config.hostname})
                 .reply(200, {
@@ -127,7 +127,7 @@ describe('LoaderIO Service', function() {
 
           describe('on app creation error', function() {
             beforeEach(function() {
-              nock(LoaderIoService.prototype.HOST)
+              nock(that.loaderService.HOST)
                 .matchHeader('loaderio-auth', 'test-auth-token')
                 .post('/v2/apps', {app: that.config.hostname})
                 .reply(400, {
@@ -153,7 +153,7 @@ describe('LoaderIO Service', function() {
           that.config.verificationToken = null;
           that.loaderService = new LoaderIoService(that.config);
 
-          nock(LoaderIoService.prototype.HOST)
+          nock(that.loaderService.HOST)
             .matchHeader('loaderio-auth', 'test-auth-token')
             .get('/v2/apps')
             .reply(200, [
@@ -163,7 +163,7 @@ describe('LoaderIO Service', function() {
                 status: 'verified'
               }
             ]);
-          nock(LoaderIoService.prototype.HOST)
+          nock(that.loaderService.HOST)
             .matchHeader('loaderio-auth', 'test-auth-token')
             .post('/v2/apps', {app: that.config.hostname})
             .reply(200, {
@@ -187,7 +187,7 @@ describe('LoaderIO Service', function() {
         beforeEach(function() {
           that.config.verificationToken = null;
           that.loaderService = new LoaderIoService(that.config);
-          nock(LoaderIoService.prototype.HOST)
+          nock(that.loaderService.HOST)
             .matchHeader('loaderio-auth', 'test-auth-token')
             .get('/v2/apps')
             .reply(200, [
@@ -210,7 +210,7 @@ describe('LoaderIO Service', function() {
         beforeEach(function() {
           that.config.appId = null;
           that.loaderService = new LoaderIoService(that.config);
-          nock(LoaderIoService.prototype.HOST)
+          nock(that.loaderService.HOST)
             .matchHeader('loaderio-auth', 'test-auth-token')
             .get('/v2/apps')
             .reply(400, {
@@ -251,7 +251,7 @@ describe('LoaderIO Service', function() {
     describe('on success', function() {
       beforeEach(function() {
         that.opts = { route: '/test1' };
-        nock(LoaderIoService.prototype.HOST)
+        nock(that.loaderService.HOST)
           .matchHeader('loaderio-auth', 'test-auth-token')
           .post('/v2/tests', {
             test_type: 'cycling',
@@ -282,7 +282,7 @@ describe('LoaderIO Service', function() {
     describe('on error', function() {
       beforeEach(function() {
         that.opts = { route: '/test1' };
-        nock(LoaderIoService.prototype.HOST)
+        nock(that.loaderService.HOST)
           .matchHeader('loaderio-auth', 'test-auth-token')
           .post('/v2/tests')
           .reply(422, {
@@ -320,7 +320,7 @@ describe('LoaderIO Service', function() {
 
     describe('when the result is immediately available', function() {
       beforeEach(function() {
-        nock(LoaderIoService.prototype.HOST)
+        nock(that.loaderService.HOST)
           .matchHeader('loaderio-auth', 'test-auth-token')
           .get('/v2/tests/' + that.testId + '/results/' + that.resultId)
           .reply(200, {
@@ -340,14 +340,14 @@ describe('LoaderIO Service', function() {
 
     describe('when the results takes two calls', function() {
       beforeEach(function() {
-        nock(LoaderIoService.prototype.HOST)
+        nock(that.loaderService.HOST)
           .matchHeader('loaderio-auth', 'test-auth-token')
           .get('/v2/tests/' + that.testId + '/results/' + that.resultId)
           .once()
           .reply(200, {
             status: 'not ready'
           });
-        nock(LoaderIoService.prototype.HOST)
+        nock(that.loaderService.HOST)
           .matchHeader('loaderio-auth', 'test-auth-token')
           .get('/v2/tests/' + that.testId + '/results/' + that.resultId)
           .once()
@@ -368,7 +368,7 @@ describe('LoaderIO Service', function() {
 
     describe('when the server returns an error on the first call', function() {
       beforeEach(function() {
-        nock(LoaderIoService.prototype.HOST)
+        nock(that.loaderService.HOST)
           .matchHeader('loaderio-auth', 'test-auth-token')
           .get('/v2/tests/' + that.testId + '/results/' + that.resultId)
           .reply(404, {
@@ -389,14 +389,14 @@ describe('LoaderIO Service', function() {
 
     describe('when the server returns an error on the second call', function() {
       beforeEach(function() {
-        nock(LoaderIoService.prototype.HOST)
+        nock(that.loaderService.HOST)
           .matchHeader('loaderio-auth', 'test-auth-token')
           .get('/v2/tests/' + that.testId + '/results/' + that.resultId)
           .once()
           .reply(200, {
             status: 'not ready'
           });
-        nock(LoaderIoService.prototype.HOST)
+        nock(that.loaderService.HOST)
           .matchHeader('loaderio-auth', 'test-auth-token')
           .get('/v2/tests/' + that.testId + '/results/' + that.resultId)
           .once()
@@ -424,7 +424,7 @@ describe('LoaderIO Service', function() {
 
     describe('on success', function() {
       beforeEach(function() {
-        nock(LoaderIoService.prototype.HOST)
+        nock(that.loaderService.HOST)
           .matchHeader('loaderio-auth', 'test-auth-token')
           .put('/v2/tests/' + that.testId + '/run')
           .once()
@@ -443,7 +443,7 @@ describe('LoaderIO Service', function() {
 
     describe('on error', function() {
       beforeEach(function() {
-        nock(LoaderIoService.prototype.HOST)
+        nock(that.loaderService.HOST)
           .matchHeader('loaderio-auth', 'test-auth-token')
           .put('/v2/tests/' + that.testId + '/run')
           .once()
@@ -473,7 +473,7 @@ describe('LoaderIO Service', function() {
     describe('when successful', function() {
       beforeEach(function() {
         that.loaderService = new LoaderIoService(that.config);
-        nock(LoaderIoService.prototype.HOST)
+        nock(that.loaderService.HOST)
           .matchHeader('loaderio-auth', 'test-auth-token')
           .post('/v2/apps/' + that.config.appId + '/verify')
           .reply(200, {
@@ -492,7 +492,7 @@ describe('LoaderIO Service', function() {
     describe('on failure', function() {
       beforeEach(function() {
         that.loaderService = new LoaderIoService(that.config);
-        nock(LoaderIoService.prototype.HOST)
+        nock(that.loaderService.HOST)
           .matchHeader('loaderio-auth', 'test-auth-token')
           .post('/v2/apps/' + that.config.appId + '/verify')
           .reply(422, {
