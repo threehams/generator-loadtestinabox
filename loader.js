@@ -10,7 +10,7 @@ Promise.promisifyAll(fs);
 var chalk = require('chalk');
 var services = require('./services');
 
-var RUN_COUNT = 2;
+var RUN_COUNT = 5;
 var TEST_DURATION = 15;
 var RETRY_DELAY = 5000;
 
@@ -44,9 +44,14 @@ Loader.prototype.run = function() {
 
   return Promise.try(function () {
     return that.loaderService.createApp();
-  }).then(function () {
+  }).then(function() {
+    return fs.readFileAsync('./config.json').then(JSON.parse).then(function(config) {
+      config.loaderIo.verificationToken = that.loaderService.verificationToken;
+      return fs.writeFileAsync('./config.json', JSON.stringify(config));
+    });
+  }).then(function() {
     return that.herokuService.setConfig({LOADERIO_VERIFICATION_TOKEN: that.loaderService.verificationToken});
-  }).then(function () {
+  }).then(function() {
     return that.loaderService.verifyApp();
   }).then(function () {
     return Promise.map(testRoutes, function (route) {

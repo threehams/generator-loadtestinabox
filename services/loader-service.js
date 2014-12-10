@@ -27,10 +27,15 @@ function LoaderService() {
 LoaderService.prototype.HOST = 'https://api.loader.io';
 LoaderService.prototype.ERROR_MESSAGES = {
   authToken: 'authToken is required. Run `node heroku.js`, or go to https://loader.io/settings for your key.',
-  hostname: 'Hostname is required for the app to be tested. Run `node heroku.js`, or add an existing host to config.json.',
-  hostTaken: 'A different host is already configured in loader.io. Free accounts only support one host.'
+  hostname: 'Hostname is required for the app to be tested. Run `node heroku.js`, or add an existing host to config.json.'
 };
 
+LoaderService.prototype.deleteApp = function(appId) {
+  return this.requestAsync({
+    method: 'DELETE',
+    url: this.HOST + '/v2/apps/' + appId
+  }).then(this._checkStatus);
+};
 
 LoaderService.prototype.createApp = function() {
   this._requireConfig(['hostname', 'authToken']);
@@ -42,15 +47,16 @@ LoaderService.prototype.createApp = function() {
     url: this.HOST + '/v2/apps'
   };
   return this.requestAsync(params).then(that._checkStatus).spread(function (response, body) {
-    if (body.length) {
-      if (_.contains(that.hostname, body[0].app)) {
-        that.appId = body[0].app_id;
-        if (that.verificationToken) return;
-        // Otherwise, continue with create/verification since it's the only way to get the verification token.
-      } else {
-        throw new Error(that.ERROR_MESSAGES.hostTaken);
-      }
+    if (body.length) { // if an app already exists
+      var host = body[0];
+      if (!_.contains(that.hostname, host.app)) throw new Error('A different host is already configured in loader.io: ' + host.app + 'Free accounts only support one host.');
+      if (!that.verificationToken && host.status === 'verified') throw new Error('App already exists and is verified, but verificationToken is missing from config.json.');
+
+      if (host.status !== 'verified') return that.deleteApp(host.app_id);
+
+      that.appId = host.app_id;
     }
+  }).then(function() {
     params = {
       method: 'POST',
       url: that.HOST + '/v2/apps',

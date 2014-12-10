@@ -1,0 +1,14 @@
+{
+  "heroku": {
+    "username": "threehams@gmail.com",
+    "password": "FT3Ls1au4As@LK@QnFXiaQoIns!O@86t",
+    "appName": "agile-garden-6551",
+    "authToken": "e623308c-7f26-468f-9f3c-b762e1449bec"
+  },
+  "loaderIo": {
+    "hostname": "http://agile-garden-6551.herokuapp.com",
+    "authToken": "d908ab9948d28322db995e5915a28f9f"
+  },
+  "mongoUrl": "mongodb://heroku:idDg5oCk54oR1VcIGf5o2kF4KZcRXvZv2jm7yzp2VIux4Wla_yAzDjv3Fnx43AuB9hGt81B2BSqDaOQmAZeWnA@dogen.mongohq.com:10068/app31670840",
+  "redisUrl": "redis://rediscloud:xyoahdtOUUUndDaU@pub-redis-13522.us-east-1-2.5.ec2.garantiadata.com:13522"
+}

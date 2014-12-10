@@ -23,22 +23,17 @@ module.exports = function(server, mongoDb, redisDb) {
     path: '/reset',
     handler: function (request, reply) {
       redisDb.flushall(function () {
-        //mongoDb.getCollections(function (err, result) {
-        //  console.log(err);
-        //  console.log(result);
-        //  return reply({});
-        //});
         return reply({});
       });
     }
   });
 
-  if (config.loader.verificationToken) {
+  if (process.env.LOADERIO_VERIFICATION_TOKEN) {
     server.route({
       method: 'GET',
-      path: '/' + config.loader.verificationToken + '/',
+      path: '/' + process.env.LOADERIO_VERIFICATION_TOKEN + '/',
       handler: function (request, reply) {
-        return reply(config.loader.verificationToken);
+        return reply(process.env.LOADERIO_VERIFICATION_TOKEN);
       }
     });
   }

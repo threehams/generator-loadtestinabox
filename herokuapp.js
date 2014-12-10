@@ -13,6 +13,8 @@ var services = require('./services');
 var HerokuService = require('./services/heroku-service');
 var LoaderService = require('./services/loader-service');
 var ConfigService = require('./services/config-service');
+var fs = require('fs');
+Promise.promisifyAll(fs);
 
 function HerokuApp() {
   this.herokuService = services.herokuService;
@@ -26,6 +28,10 @@ HerokuApp.prototype.createApp = function() {
     return that.herokuService.getAuthToken(that.herokuService.username, that.herokuService.password);
   }).then(function (authToken) {
     that.herokuService.setAuthToken(authToken);
+    return fs.readFileAsync('./config.json').then(JSON.parse).then(function(config) {
+      config.heroku.authToken = authToken;
+      return fs.writeFileAsync('./config.json', JSON.stringify(config));
+    });
   }).then(function () {
     if (that.herokuService.appName) return that.herokuService.appName;
     return that.herokuService.createApp();
