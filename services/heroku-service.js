@@ -3,8 +3,11 @@
 var Promise = require('bluebird');
 Promise.longStackTraces();
 var request = require('request');
+var services = require('../services');
 
-function HerokuService(config) {
+function HerokuService() {
+  var config = services.configService.read().heroku;
+
   this.appName = config.appName;
   this.authToken = config.authToken;
   this.username = config.username;

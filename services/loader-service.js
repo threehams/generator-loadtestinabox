@@ -4,11 +4,14 @@ var Promise = require('bluebird');
 Promise.longStackTraces();
 var request = require('request');
 var _ = require('lodash');
+var services = require('../services');
 
 var TEST_DURATION = 15;
 var POLL_INTERVAL = 2000;
 
-function LoaderIoService(config) {
+function LoaderService() {
+  var config = services.configService.read().loader;
+
   this.verificationToken = config.verificationToken;
   this.appId = config.appId;
   this.hostname = config.hostname;
@@ -21,15 +24,15 @@ function LoaderIoService(config) {
   );
 }
 
-LoaderIoService.prototype.HOST = 'https://api.loader.io';
-LoaderIoService.prototype.ERROR_MESSAGES = {
+LoaderService.prototype.HOST = 'https://api.loader.io';
+LoaderService.prototype.ERROR_MESSAGES = {
   authToken: 'authToken is required. Run `node heroku.js`, or go to https://loader.io/settings for your key.',
-  hostname: 'Hostname is required for the app to be tested. Run `node heroku.js`, or add an existing host to config.js.',
+  hostname: 'Hostname is required for the app to be tested. Run `node heroku.js`, or add an existing host to config.json.',
   hostTaken: 'A different host is already configured in loader.io. Free accounts only support one host.'
 };
 
 
-LoaderIoService.prototype.createApp = function() {
+LoaderService.prototype.createApp = function() {
   this._requireConfig(['hostname', 'authToken']);
 
   if (this.appId && this.verificationToken) return;
@@ -63,7 +66,7 @@ LoaderIoService.prototype.createApp = function() {
   });
 };
 
-LoaderIoService.prototype.createTest = function(opts) {
+LoaderService.prototype.createTest = function(opts) {
   if (!opts.route) throw new Error('Route is required');
 
   return this.requestAsync({
@@ -87,7 +90,7 @@ LoaderIoService.prototype.createTest = function(opts) {
   });
 };
 
-LoaderIoService.prototype.pollCompletion = function(testId, resultId) {
+LoaderService.prototype.pollCompletion = function(testId, resultId) {
   var that = this;
   var url = this.HOST + '/v2/tests/' + testId + '/results/' + resultId;
 
@@ -100,7 +103,7 @@ LoaderIoService.prototype.pollCompletion = function(testId, resultId) {
   });
 };
 
-LoaderIoService.prototype.runTest = function(testId) {
+LoaderService.prototype.runTest = function(testId) {
   if (!testId) throw new Error('testId is required');
 
   return this.requestAsync({
@@ -111,7 +114,7 @@ LoaderIoService.prototype.runTest = function(testId) {
   });
 };
 
-LoaderIoService.prototype.verifyApp = function() {
+LoaderService.prototype.verifyApp = function() {
   var params = {
     method: 'POST',
     url: this.HOST + '/v2/apps/' + this.appId + '/verify'
@@ -119,12 +122,12 @@ LoaderIoService.prototype.verifyApp = function() {
   return this.requestAsync(params).bind(this).then(this._checkStatus);
 };
 
-LoaderIoService.prototype._checkStatus = function(responseBody) {
+LoaderService.prototype._checkStatus = function(responseBody) {
   if (responseBody[0].statusCode >= 400) throw new Error(JSON.stringify(responseBody[1]));
   return responseBody;
 };
 
-LoaderIoService.prototype._requireConfig = function(attrs) {
+LoaderService.prototype._requireConfig = function(attrs) {
   var that = this;
 
   _.forEach(attrs, function (attr) {
@@ -132,4 +135,4 @@ LoaderIoService.prototype._requireConfig = function(attrs) {
   });
 };
 
-module.exports = LoaderIoService;
+module.exports = LoaderService;

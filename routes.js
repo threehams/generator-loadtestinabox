@@ -33,12 +33,12 @@ module.exports = function(server, mongoDb, redisDb) {
     }
   });
 
-  if (config.loaderIo.verificationToken) {
+  if (config.loader.verificationToken) {
     server.route({
       method: 'GET',
-      path: '/' + config.loaderIo.verificationToken + '/',
+      path: '/' + config.loader.verificationToken + '/',
       handler: function (request, reply) {
-        return reply(config.loaderIo.verificationToken);
+        return reply(config.loader.verificationToken);
       }
     });
   }

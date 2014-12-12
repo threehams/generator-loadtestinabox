@@ -9,19 +9,20 @@ Promise.promisifyAll(request);
 var git = require('gift');
 Promise.promisifyAll(git);
 var _ = require('lodash');
+var services = require('./services');
 var HerokuService = require('./services/heroku-service');
-var LoaderIoService = require('./services/loaderio-service');
+var LoaderService = require('./services/loader-service');
+var ConfigService = require('./services/config-service');
 
-function HerokuApp(config) {
-  this.herokuService = new HerokuService(config.heroku);
-  this.loaderService = new LoaderIoService(config.loaderIo);
+function HerokuApp() {
+  this.herokuService = services.herokuService;
+  this.loaderService = services.loaderService;
 }
 
 HerokuApp.prototype.createApp = function() {
   var that = this;
   return Promise.resolve().then(function () {
     if (that.herokuService.authToken) return that.herokuService.authToken;
-    //that.herokuService.getAuthToken(that.herokuService.username, that.herokuService.password).then(console.log);
     return that.herokuService.getAuthToken(that.herokuService.username, that.herokuService.password);
   }).then(function (authToken) {
     that.herokuService.setAuthToken(authToken);
@@ -77,5 +78,8 @@ module.exports = HerokuApp;
 
 /* istanbul ignore if */
 if (!module.parent) {
+  services.configService = new ConfigService();
+  services.herokuService = new HerokuService();
+  services.loaderService = new LoaderService();
   new HerokuApp(require('./config')).run();
 }

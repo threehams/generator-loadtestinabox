@@ -8,22 +8,25 @@ var util = require('util');
 var fs = require('fs');
 Promise.promisifyAll(fs);
 var chalk = require('chalk');
-var config = require('./config');
+var services = require('./services');
 
 var RUN_COUNT = 2;
 var TEST_DURATION = 15;
 var RETRY_DELAY = 5000;
 
-var LoaderIoService = require('./services/loaderio-service');
+var LoaderService = require('./services/loader-service');
 var HerokuService = require('./services/heroku-service');
+var ConfigService = require('./services/config-service');
 
-function LoaderIo(opts) {
+function Loader(opts) {
   opts = opts || {};
   this.runCount = opts.runCount || RUN_COUNT;
   this.testDuration = opts.testDuration || TEST_DURATION;
+  this.loaderService = services.loaderService;
+  this.herokuService = services.herokuService;
 }
 
-LoaderIo.prototype.run = function() {
+Loader.prototype.run = function() {
   var tests = [];
   var that = this;
   var testRoutes = ['/test1', '/test2'];
@@ -31,8 +34,6 @@ LoaderIo.prototype.run = function() {
     '/test1': [],
     '/test2': []
   };
-  var loaderService = new LoaderIoService(config.loaderIo);
-  var herokuService = new HerokuService(config.heroku);
 
   function addResults(route, results) {
     testResults[route].push({
@@ -42,21 +43,21 @@ LoaderIo.prototype.run = function() {
   }
 
   return Promise.try(function () {
-    return loaderService.createApp();
+    return that.loaderService.createApp();
   }).then(function () {
-    return herokuService.setConfig({LOADERIO_VERIFICATION_TOKEN: loaderService.verificationToken});
+    return that.herokuService.setConfig({LOADERIO_VERIFICATION_TOKEN: that.loaderService.verificationToken});
   }).then(function () {
-    return loaderService.verifyApp();
+    return that.loaderService.verifyApp();
   }).then(function () {
     return Promise.map(testRoutes, function (route) {
-      return loaderService.createTest({ route: route }).then(function(result) {
+      return that.loaderService.createTest({ route: route }).then(function(result) {
         var testId = result.testId;
         var resultId = result.resultId;
         tests.push({route: route, testId: testId});
 
         // TODO Check for errors after 5 seconds, then wait for remainder of testing time
         return Promise.delay(TEST_DURATION * 1000).then(function () {
-          return loaderService.pollCompletion(testId, resultId);
+          return that.loaderService.pollCompletion(testId, resultId);
         });
       }).then(function (results) {
         addResults(route, results);
@@ -74,8 +75,8 @@ LoaderIo.prototype.run = function() {
       var retries = 0;
 
       function runTest(testId) {
-        return loaderService.runTest(testId).delay(TEST_DURATION * 1000).then(function (resultId) {
-          return loaderService.pollCompletion(testId, resultId);
+        return that.loaderService.runTest(testId).delay(TEST_DURATION * 1000).then(function (resultId) {
+          return that.loaderService.pollCompletion(testId, resultId);
         }).then(function (results) {
           addResults(test.route, results);
         }).catch(function (error) {
@@ -156,7 +157,7 @@ function interpretResults(testResults) {
   return finalResults;
 }
 
-module.exports = LoaderIo;
+module.exports = Loader;
 
 function displayResults(finalResults) {
   function winner(results, param, direction) {
@@ -193,5 +194,8 @@ if (!module.parent) {
   //fs.readFileAsync('./results.json').then(JSON.parse).then(function (results) {
   //  displayResults(results);
   //});
-  new LoaderIo().run().then(displayResults);
+  services.configService = new ConfigService();
+  services.herokuService = new HerokuService();
+  services.loaderService = new LoaderService();
+  new Loader().run().then(displayResults);
 }

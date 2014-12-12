@@ -12,4 +12,13 @@ global.chai.use(chaiAsPromised);
 global.nock = require('nock');
 global.nock.disableNetConnect();
 
+var services = require('../services');
+var FakeConfigService = require('./mocks/config-service-mock');
+var FakeHerokuService = require('./mocks/heroku-service-mock');
+var FakeLoaderService = require('./mocks/loader-service-mock');
+
+services.configService = new FakeConfigService();
+services.herokuService = new FakeHerokuService();
+services.loaderService = new FakeLoaderService();
+
 process.env.TEST = true;

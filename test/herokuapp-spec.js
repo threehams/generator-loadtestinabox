@@ -1,25 +1,29 @@
 'use strict';
 var rewire = require('rewire');
-var HerokuApp = rewire('../../herokuapp');
+var HerokuApp = rewire('../herokuapp');
 var Promise = require('bluebird');
-var FakeLoaderService = require('../mocks/loaderio-service-mock');
-var FakeHerokuService = require('../mocks/heroku-service-mock');
-var fakeGift = require('../mocks/gift-mock');
+var fakeGift = require('./mocks/gift-mock');
+var services = require('../services');
+var FakeHerokuService = require('./mocks/heroku-service-mock');
+var FakeLoaderService = require('./mocks/loader-service-mock');
 
 describe('single run', function() {
   var that = this;
-  that.config = {
-    heroku: {
-      username: 'username', // note: these should only ever come from command line, and should not be stored
-      password: 'password'
-    }
-  };
 
   beforeEach(function() {
-    HerokuApp.__set__('LoaderIoService', FakeLoaderService);
-    HerokuApp.__set__('HerokuService', FakeHerokuService);
+    sinon.stub(services.configService, 'read').returns({
+      heroku: {
+        username: 'username',
+        password: 'password'
+      }
+    });
+    services.herokuService = new FakeHerokuService();
+    services.loaderService = new FakeLoaderService();
     HerokuApp.__set__('git', fakeGift);
-    that.herokuApp = new HerokuApp(that.config);
+    that.herokuApp = new HerokuApp();
+  });
+  afterEach(function() {
+    services.configService.read.restore();
   });
 
   describe('main path', function() {
@@ -40,7 +44,7 @@ describe('single run', function() {
         return that.herokuApp.createApp().then(function () {
           that.getTokenSpy.should.have.been.called;
           that.createAppSpy.should.have.been.called;
-        }).should.be.fulfilled;
+        });
       });
 
       it('sets the auth token and app name', function() {

@@ -1,8 +1,10 @@
 'use strict';
 var Promise = require('bluebird');
+var services = require('../../services');
 
-function FakeHerokuService(config) {
-  config = config || {};
+function FakeHerokuService() {
+  var config = services.configService.read().heroku;
+
   this.appName = config.appName;
   this.authToken = config.authToken;
   this.username = config.username;

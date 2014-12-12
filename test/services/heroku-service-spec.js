@@ -1,6 +1,7 @@
 'use strict';
 var rewire = require('rewire');
 var HerokuService = rewire('../../services/heroku-service');
+var services = require('../../services');
 
 describe('Heroku Service', function() {
   var that = this;
@@ -10,12 +11,18 @@ describe('Heroku Service', function() {
       appName: 'test-app',
       authToken: 'ff9c3a98-3408-46ac-85cf-cbc41306f736'
     };
+    sinon.stub(services.configService, 'read').returns({
+      heroku: that.config
+    });
+  });
+  afterEach(function() {
+    services.configService.read.restore();
   });
 
   describe('createAddon', function() {
     describe('on success', function() {
       beforeEach(function() {
-        that.herokuService = new HerokuService(that.config);
+        that.herokuService = new HerokuService();
         nock(HerokuService.prototype.HOST)
           .matchHeader('Authorization', 'Bearer ' + that.config.authToken)
           .post('/apps/' + that.config.appName + '/addons', {plan: 'pork'})
@@ -29,7 +36,7 @@ describe('Heroku Service', function() {
 
     describe('on error', function() {
       beforeEach(function() {
-        that.herokuService = new HerokuService(that.config);
+        that.herokuService = new HerokuService();
         nock(HerokuService.prototype.HOST)
           .matchHeader('Authorization', 'Bearer ' + that.config.authToken)
           .post('/apps/' + that.config.appName + '/addons', {plan: 'pork'})
@@ -44,7 +51,7 @@ describe('Heroku Service', function() {
 
   describe('createApp', function() {
     beforeEach(function() {
-      that.herokuService = new HerokuService(that.config);
+      that.herokuService = new HerokuService();
     });
 
     describe('on success', function() {
@@ -105,7 +112,7 @@ describe('Heroku Service', function() {
 
   describe('getAddons', function() {
     beforeEach(function() {
-      that.herokuService = new HerokuService(that.config);
+      that.herokuService = new HerokuService();
     });
 
     describe('on success', function() {
@@ -148,7 +155,7 @@ describe('Heroku Service', function() {
 
   describe('getAuthToken', function() {
     beforeEach(function() {
-      that.herokuService = new HerokuService(that.config);
+      that.herokuService = new HerokuService();
     });
     describe('on success', function() {
       beforeEach(function() {
@@ -188,7 +195,7 @@ describe('Heroku Service', function() {
 
   describe('getConfig', function() {
     beforeEach(function() {
-      that.herokuService = new HerokuService(that.config);
+      that.herokuService = new HerokuService();
     });
     describe('on success', function() {
       beforeEach(function() {
@@ -223,7 +230,7 @@ describe('Heroku Service', function() {
 
   describe('setAuthToken', function() {
     beforeEach(function() {
-      that.herokuService = new HerokuService(that.config);
+      that.herokuService = new HerokuService();
     });
 
     describe('on success', function() {
@@ -251,7 +258,7 @@ describe('Heroku Service', function() {
         that.configVars = {
           theKey: 'theValue'
         };
-        that.herokuService = new HerokuService(that.config);
+        that.herokuService = new HerokuService();
         nock(HerokuService.prototype.HOST)
           .matchHeader('Authorization', 'Bearer ' + that.config.authToken)
           .patch('/apps/' + that.config.appName + '/config-vars')
@@ -268,7 +275,7 @@ describe('Heroku Service', function() {
         that.configVars = {
           theKey: 'theValue'
         };
-        that.herokuService = new HerokuService(that.config);
+        that.herokuService = new HerokuService();
         nock(HerokuService.prototype.HOST)
           .matchHeader('Authorization', 'Bearer ' + that.config.authToken)
           .patch('/apps/' + that.config.appName + '/config-vars')
